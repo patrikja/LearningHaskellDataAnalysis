@@ -15,3 +15,5 @@ cabal.sandbox.config
 *.aux
 *.hp
 *~
+LearnHaskDA/all_week.csv
+earthquakes.sql
