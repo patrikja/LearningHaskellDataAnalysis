@@ -2,7 +2,7 @@
 -- documentation, see http://haskell.org/cabal/users-guide/
 
 name:                LearnHaskDA
-version:             0.2.5.0
+version:             0.3.0.0
 synopsis:            Some code related to the book "Learning Haskell Data Analysis"
 -- description:
 homepage:            https://github.com/patrikja/LearningHaskellDataAnalysis
@@ -17,10 +17,17 @@ build-type:          Simple
 cabal-version:       >=1.10
 
 library
-  exposed-modules:     LearnHaskDA.Chapter1, LearnHaskDA.Median, LearnHaskDA.Chapter2, LearnHaskDA.Chapter3
+  exposed-modules:     LearnHaskDA.Chapter1, LearnHaskDA.Median, LearnHaskDA.Chapter2, LearnHaskDA.Chapter3, LearnHaskDA.Chapter3.Search
   -- other-modules:
   -- other-extensions:
   build-depends:       base >=4.8 && <4.9, csv, HDBC, sqlite, HDBC-sqlite3, regex-posix
 
 --  hs-source-dirs:
   default-language:    Haskell2010
+
+executable Chapter3
+  main-is:             Chapter3_main.hs
+  build-depends:       base >=4.8 && <4.9, csv, regex-posix
+  default-language:    Haskell2010
+  -- This did not quite work, so I created a separate Main module instead.
+  -- GHC-Options:         LearnHaskDA.Chapter3.main
