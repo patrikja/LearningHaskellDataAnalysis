@@ -2,7 +2,7 @@
 -- documentation, see http://haskell.org/cabal/users-guide/
 
 name:                LearnHaskDA
-version:             0.3.0.0
+version:             0.3.5.0
 synopsis:            Some code related to the book "Learning Haskell Data Analysis"
 -- description:
 homepage:            https://github.com/patrikja/LearningHaskellDataAnalysis
@@ -28,6 +28,7 @@ library
                      , regex-posix
                      , sqlite
                      , convertible
+                     , time
 
 --  hs-source-dirs:
   default-language:    Haskell2010
