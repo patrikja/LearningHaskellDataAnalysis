@@ -44,3 +44,25 @@ convertCSVFileToSQL "all_month.csv" "earthquakes.sql" "oneMonth" ["time TEXT", "
 ```
 
 (Typo on page 75: remove the line starting with earthquakeCoordinates.)
+
+## Chapter 5
+
+```shell
+cabal install exact-combinatorics
+wget http://www.retrosheet.org/gamelogs/gl2014.zip
+unzip gl2014.zip
+cut -d, -f 1,4,7,10,11 GL2014.TXT > winloss2014.csv
+```
+
+```haskell
+convertCSVFileToSQL "winloss2014.csv" "winloss.sql" "winloss" ["date TEXT", "awayteam TEXT", "hometeam TEXT", "awayscore INTEGER", "homescore INTEGER"]
+runsAtHome <- queryDatabase "winloss.sql" "SELECT hometeam, SUM(homescore) FROM winloss GROUP BY hometeam ORDER BY hometeam"
+runsAtHome
+runsAway   <- queryDatabase "winloss.sql" "SELECT awayteam, SUM(awayscore) FROM winloss GROUP BY awayteam ORDER BY awayteam"
+runsAway
+let runsHomeAway = zip (readDoubleColumn runsAtHome 1) (readDoubleColumn runsAway 1)
+plot (PNG "HomeScoreAwayScore.png") $ Data2D [Title "Runs at Home (x axis) and Runs Away (y axis)"] [] runsHomeAway
+let runsHomeAwayDiff = map (\(a,b) -> a-b) runsHomeAway
+plot (PNG "HomeScoreAwayScoreDiff.png") $ Data2D [Title "Difference in Runs at Home and Runs Away"] [] $ zip [1..] runsHomeAwayDiff
+average runsHomeAwayDiff
+```
