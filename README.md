@@ -52,6 +52,7 @@ cabal install exact-combinatorics
 wget http://www.retrosheet.org/gamelogs/gl2014.zip
 unzip gl2014.zip
 cut -d, -f 1,4,7,10,11 GL2014.TXT > winloss2014.csv
+cabal install erf
 ```
 
 ```haskell

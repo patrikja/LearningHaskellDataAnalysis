@@ -4,6 +4,7 @@ import LearnHaskDA.Chapter2
 import LearnHaskDA.Chapter4
 import Graphics.EasyPlot
 import System.Random
+import Data.Number.Erf
 
 probabilityMassFunction :: (Integral i, Num n) => i -> i -> n -> n
 probabilityMassFunction k n p = fromIntegral (n `choose` k)
@@ -48,3 +49,12 @@ test91 = do
   return (avg, stdDev, stdErr)
 
 --
+
+from = invnormcdf ((1-95/100)/2 :: Double)
+to = - from
+
+test95 = test91 >>= \ (avg, stdDev, stdErr) ->
+         return (avg + from*stdErr, avg + to*stdErr)
+
+-- The 95% confidence interval is (-14.9, 26.6) which contains zero so
+-- the null hypothesis could not be rejected.
