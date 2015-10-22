@@ -67,3 +67,11 @@ let runsHomeAwayDiff = map (\(a,b) -> a-b) runsHomeAway
 plot (PNG "HomeScoreAwayScoreDiff.png") $ Data2D [Title "Difference in Runs at Home and Runs Away"] [] $ zip [1..] runsHomeAwayDiff
 average runsHomeAwayDiff
 ```
+
+## Chapter 6
+
+## Chapter 7
+
+https://apps.twitter.com/
+
+https://www.fpcomplete.com/school/starting-with-haskell/libraries-and-frameworks/text-manipulation/json
