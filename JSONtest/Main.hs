@@ -50,8 +50,8 @@ getJSON :: IO B.ByteString
 getJSON = simpleHttp jsonURL
 --}
 
-main :: IO ()
-main = do
+main1 :: IO ()
+main1 = do
  -- Get JSON data and decode it
  d <- (eitherDecode <$> getJSON) :: IO (Either String [Person])
  -- If d is Left, the JSON was malformed.
@@ -76,6 +76,8 @@ mycred = newCredential "your access token here"
                        "your access token secret here"
 -}
 
+type E = Either String
+
 {- A failed attempt at storing the keys using JSON - OAuth does not export all its constructors.
 deriving instance Generic OAuth
 deriving instance Generic Credential
@@ -84,7 +86,6 @@ instance ToJSON OAuth
 instance FromJSON Credential
 instance ToJSON Credential
 
-type E = Either String
 loadConfig :: IO (E OAuth, E Credential)
 loadConfig = do
   myoauth <- eitherDecode <$> B.readFile "/home/patrikj/secret/twitter_oauth.json"
@@ -100,16 +101,17 @@ loadConfig = do
 
 data Tweet =
   Tweet { text :: !Text
-        , created_at :: !UTCTime
-          } deriving (Show, Generic)
+--        , created_at :: !UTCTime -- Problem with twitter data not using trailing "Z"
+        , created_at :: !String
+        } deriving (Show, Generic)
 
 instance FromJSON Tweet
 instance ToJSON Tweet
 
 timeline :: String -- ^ Screen name of the user
-         -> IO (Either String [Tweet]) -- ^ If there is any error parsing the JSON data, it
-                                       --   will return 'Left String', where the 'String'
-                                       --   contains the error information.
+         -> IO (E [Tweet]) -- ^ If there is any error parsing the JSON data, it
+                           --   will return 'Left String', where the 'String'
+                           --   contains the error information.
 timeline name = do
   (myoauth, mycred) <- loadConfig
   -- Firstly, we create a HTTP request with method GET (it is the default so we don't have to change that).
@@ -122,3 +124,18 @@ timeline name = do
   res <- httpLbs signedreq manager
   -- Decode the response body.
   return $ eitherDecode $ responseBody res
+
+-- ISO-8601 date parse error
+
+main2 :: String -> IO ()
+main2 user = do
+  -- Read the timeline from Hackage user.
+  ets <- timeline user
+  case ets of
+   -- When the parsing of the JSON data fails, we report it.
+   Left err -> putStrLn err
+   -- When successful, print in the screen the first 5 tweets.
+   Right ts  -> mapM_ print $ take 5 ts
+
+main = main2 "patrikja"
+       -- main2 "Hackage"
