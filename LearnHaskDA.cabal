@@ -22,7 +22,7 @@ library
   -- other-extensions:
   build-depends:       HDBC
                      , HDBC-sqlite3
-                     , base >=4.8 && <4.9
+                     , base >=4.7 && <4.9
                      , csv
                      , easyplot >= 1.0
                      , regex-posix

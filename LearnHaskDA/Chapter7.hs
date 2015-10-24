@@ -1,8 +1,11 @@
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedStrings, DeriveGeneric #-}
 module LearnHaskDA.Chapter7 where
+import LearnHaskDA.Chapter4 (queryDatabase)
 import Data.List as L
 import Data.Hashable
 import Data.HashMap.Strict as HM
+import Data.Convertible.Base
 import Database.HDBC.Sqlite3
 import Database.HDBC
 import Control.Concurrent
@@ -31,9 +34,9 @@ instance FromJSON User
 instance FromJSON Tweet
 instance FromJSON Search
 
-instance ToJSON   User
-instance ToJSON   Tweet
-instance ToJSON   Search
+-- instance ToJSON   User
+-- instance ToJSON   Tweet
+-- instance ToJSON   Search
 
 loadConfig :: IO (OAuth, Credential)
 loadConfig = do
@@ -91,5 +94,63 @@ collectTweetsIntoDatabase = do
     status <- twitterSearch "a"
     either  putStrLn  (insertTweetsInDatabase . statuses)  status
     threadDelay 5000
+-- The delay is supposed to make sure we don't end up over the free
+-- twitter api quota (but I think something wrong with the delay).
 
 slurpTweets = sequence_ (replicate 180 collectTweetsIntoDatabase)
+
+fromSqlPair ::  (Convertible SqlValue a, Convertible SqlValue b) =>
+                [SqlValue] -> (a, b)
+fromSqlPair (a:b:_) = (fromSql a, fromSql b)
+
+test125 :: IO [(String, String)]
+test125 = do
+  sqlTweets <- queryDatabase "tweets.sql" "SELECT message, language FROM tweets"
+  return (L.map fromSqlPair sqlTweets)
+
+frequency ::  (Eq k, Hashable k, Integral v) =>
+              [k] -> HashMap k v
+frequency = fromListWith (+) . L.map (\k -> (k, 1))
+-- fromListWith :: (Eq k, Hashable k) => (v -> v -> v) -> [(k, v)] -> HashMap k v
+
+
+type MyWord = String
+removePunctuation :: MyWord -> MyWord
+removePunctuation = L.map (toLower) . L.filter isAlpha
+
+-- | Clean removes @ replies, hashtags, links and punctuation from strings.
+clean :: String -> [MyWord]
+clean = L.map removePunctuation
+      . L.filter (\myWord -> not (or
+                    [ isInfixOf "@"       myWord
+                    , isInfixOf "#"       myWord
+                    , isInfixOf "http://" myWord ]))
+      . words
+
+test126 = do
+  tweets <- test125
+  let freqTable = frequency tweets
+  let uniqueTweets = HM.keys freqTable
+--  HM.size freqTable
+  let cleanedTweets = zip (L.map snd uniqueTweets) (L.map (clean.fst) uniqueTweets)
+  let languageFrequency = (frequency . L.map fst) cleanedTweets
+  return languageFrequency
+
+-- let allLanguages = HM.keys languageFrequency
+-- let wordFrequency = (frequency . concatMap words) (L.map fst cleanedTweets)
+
+wordFrequencyByLanguage' allLanguages cleanedTweets =
+  (HM.fromList . L.map (\language ->
+       (language, (frequency . concatMap words . L.map fst)
+                    (L.filter (\tweet -> language == (snd tweet)) cleanedTweets)))) allLanguages
+
+-- TODO: clean up this definition to avoid multiple traversals of cleanedTweets
+-- Each cleaned tweet should produce one (language, word frequency map) pair
+-- Then all of those maps are combined.
+
+wordFrequencyByLanguage :: (Eq k, Hashable k,
+                            Eq v, Hashable v,
+                            Integral i) =>
+                           [(k,[v])] -> HashMap k (HashMap v i)
+wordFrequencyByLanguage = fromListWith HM.union
+                        . L.map (\(k, vs)-> (k, frequency vs))
