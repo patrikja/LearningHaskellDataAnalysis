@@ -154,3 +154,56 @@ wordFrequencyByLanguage :: (Eq k, Hashable k,
                            [(k,[v])] -> HashMap k (HashMap v i)
 wordFrequencyByLanguage = fromListWith HM.union
                         . L.map (\(k, vs)-> (k, frequency vs))
+
+{-
+probLanguageGivenWord :: String
+                      -> String
+                      -> HashMap String Integer
+                      -> HashMap String Integer
+                      -> HashMap String (HashMap String Integer)
+                      -> Double
+-}
+
+probLanguageGivenWord ::
+  ( Eq k,  Hashable k,
+    Eq k1, Hashable k1,
+    Fractional f, Integral a
+  ) => HashMap k1 a
+    -> HashMap k a
+    -> HashMap k1 (HashMap k a)
+    -> k1 -> k -> f
+
+probLanguageGivenWord
+    languageFrequency
+    wordFrequency
+    wordFrequencyByLanguage
+    language
+    word
+    =
+    pLanguage * pWordGivenLanguage / pWord
+  where
+    countTweets   = fromIntegral . sum $ elems languageFrequency
+    countAllWords = fromIntegral . sum $ elems wordFrequency
+    countLanguage = fromIntegral $ lookupDefault 0 language languageFrequency
+    countWordsUsedInLanguage =  fromIntegral . sum . elems $
+                                wordFrequencyByLanguage ! language
+    countWord     = fromIntegral $ lookupDefault 0 word wordFrequency
+    countWordInLanguage = fromIntegral $ lookupDefault 0 word
+                              (wordFrequencyByLanguage ! language)
+    pLanguage           = countLanguage / countTweets
+    pWordGivenLanguage  = countWordInLanguage / countWordsUsedInLanguage
+    pWord               = countWord / countAllWords
+
+test129' = do
+  tweets <- test125
+  let freqTable = frequency tweets
+  let uniqueTweets = HM.keys freqTable
+  let cleanedTweets = zip (L.map snd uniqueTweets) (L.map (clean.fst) uniqueTweets)
+  let languageFrequency = (frequency . L.map fst) cleanedTweets
+  let wordFreqByLang = wordFrequencyByLanguage cleanedTweets
+  let wordFrequency = (frequency . concatMap words) (L.map fst cleanedTweets)
+  return (wordFrequency, languageFrequency, wordFrequencyByLanguage)
+
+test129 = do
+  (wordFrequency, languageFrequency, wordFrequencyByLanguage) <- test129'
+  return $ probLanguageGivenWord languageFrequency wordFrequency wordFrequencyByLanguage
