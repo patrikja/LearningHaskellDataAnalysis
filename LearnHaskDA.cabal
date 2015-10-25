@@ -2,7 +2,7 @@
 -- documentation, see http://haskell.org/cabal/users-guide/
 
 name:                LearnHaskDA
-version:             0.6.8
+version:             0.6.9
 synopsis:            Some code related to the book "Learning Haskell Data Analysis"
 -- description:
 homepage:            https://github.com/patrikja/LearningHaskellDataAnalysis
@@ -29,7 +29,8 @@ library
                      , sqlite
                      , convertible
                      , time
-                     , exact-combinatorics
+--                     , exact-combinatorics
+                     , math-functions
                      , random
                      , erf
                      , hashable

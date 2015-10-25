@@ -1,13 +1,22 @@
 module LearnHaskDA.Chapter5 where
-import Math.Combinatorics.Exact.Binomial
+--import Math.Combinatorics.Exact.Binomial
+import Numeric.SpecFunctions (choose)
 import LearnHaskDA.Chapter2
 import LearnHaskDA.Chapter4
 import Graphics.EasyPlot
 import System.Random
 import Data.Number.Erf
 
-probabilityMassFunction :: (Integral i, Num n) => i -> i -> n -> n
-probabilityMassFunction k n p = fromIntegral (n `choose` k)
+{- Using Math.Combinatorics.Exact.Binomial in the exact-combinatorics
+package we could have a more general type here and an exact, yet
+efficient, computation of choose. But exact-combinatorics is not on
+stackage so I changed to the approximation (from Numeric.SpecFunctions
+which is on stackage). We only use it for plotting anyway.
+
+-- probabilityMassFunction :: (Integral i, Num n) => i -> i -> n -> n
+-}
+probabilityMassFunction :: Int -> Int -> Double -> Double
+probabilityMassFunction k n p = (n `choose` k)
                               * p^k * (1-p)^(n-k)
 plot81 :: IO Bool
 plot81 = plot (PNG "coinflips.png") $
@@ -19,7 +28,8 @@ plot81 = plot (PNG "coinflips.png") $
 sanitycheck :: Bool
 sanitycheck = 1 == sum (map (\k -> probabilityMassFunction k 1000 0.5) [0..1000])
 
-sumMid :: (Fractional a, Integral i) => i -> a
+-- sumMid :: (Fractional a, Integral i) => i -> a
+sumMid :: Int -> Double
 sumMid d = sum $ map (\k -> probabilityMassFunction k 1000 0.5) [500-d .. 500+d]
 
 ----------------
