@@ -122,9 +122,10 @@ removePunctuation = L.map (toLower) . L.filter isAlpha
 clean :: String -> [MyWord]
 clean = L.map removePunctuation
       . L.filter (\myWord -> not (or
-                    [ isInfixOf "@"       myWord
-                    , isInfixOf "#"       myWord
-                    , isInfixOf "http://" myWord ]))
+                    [ isInfixOf "@"        myWord
+                    , isInfixOf "#"        myWord
+                    , isInfixOf "http://"  myWord
+                    , isInfixOf "https://" myWord]))
       . words
 
 test126 = do
@@ -139,30 +140,23 @@ test126 = do
 -- let allLanguages = HM.keys languageFrequency
 -- let wordFrequency = (frequency . concatMap words) (L.map fst cleanedTweets)
 
+{- From the book:
 wordFrequencyByLanguage' allLanguages cleanedTweets =
   (HM.fromList . L.map (\language ->
        (language, (frequency . concatMap words . L.map fst)
                     (L.filter (\tweet -> language == (snd tweet)) cleanedTweets)))) allLanguages
 
--- TODO: clean up this definition to avoid multiple traversals of cleanedTweets
+-- I cleaned up this definition to avoid multiple traversals of cleanedTweets
 -- Each cleaned tweet should produce one (language, word frequency map) pair
 -- Then all of those maps are combined.
+-}
 
 wordFrequencyByLanguage :: (Eq k, Hashable k,
                             Eq v, Hashable v,
                             Integral i) =>
                            [(k,[v])] -> HashMap k (HashMap v i)
-wordFrequencyByLanguage = fromListWith HM.union
+wordFrequencyByLanguage = fromListWith (HM.unionWith (+))
                         . L.map (\(k, vs)-> (k, frequency vs))
-
-{-
-probLanguageGivenWord :: String
-                      -> String
-                      -> HashMap String Integer
-                      -> HashMap String Integer
-                      -> HashMap String (HashMap String Integer)
-                      -> Double
--}
 
 probLanguageGivenWord ::
   ( Eq k,  Hashable k,
@@ -171,7 +165,7 @@ probLanguageGivenWord ::
   ) => HashMap k1 a
     -> HashMap k a
     -> HashMap k1 (HashMap k a)
-    -> k1 -> k -> f
+    -> k1 -> k -> [f]
 
 probLanguageGivenWord
     languageFrequency
@@ -180,7 +174,7 @@ probLanguageGivenWord
     language
     word
     =
-    pLanguage * pWordGivenLanguage / pWord
+    [pLanguage * pWordGivenLanguage / pWord, pLanguage, pWordGivenLanguage, pWord]
   where
     countTweets   = fromIntegral . sum $ elems languageFrequency
     countAllWords = fromIntegral . sum $ elems wordFrequency
@@ -194,16 +188,41 @@ probLanguageGivenWord
     pWordGivenLanguage  = countWordInLanguage / countWordsUsedInLanguage
     pWord               = countWord / countAllWords
 
+type Counts a = HashMap a Integer
+type Lang = String
+test129' :: IO ( Counts MyWord
+               , Counts Lang
+               , HashMap Lang (Counts MyWord))
 test129' = do
   tweets <- test125
-  let freqTable = frequency tweets
-  let uniqueTweets = HM.keys freqTable
-  let cleanedTweets = zip (L.map snd uniqueTweets) (L.map (clean.fst) uniqueTweets)
-  let languageFrequency = (frequency . L.map fst) cleanedTweets
-  let wordFreqByLang = wordFrequencyByLanguage cleanedTweets
-  let wordFrequency = (frequency . concatMap words) (L.map fst cleanedTweets)
-  return (wordFrequency, languageFrequency, wordFrequencyByLanguage)
+  let freqTable          = frequency tweets
+  let uniqueTweets       = HM.keys freqTable
+  let cleanedTweets      = zip (L.map snd uniqueTweets) (L.map (clean.fst) uniqueTweets)
+  let languageFrequency  = (frequency . L.map fst) cleanedTweets
+  let wordFreqByLang     = wordFrequencyByLanguage cleanedTweets
+  let wordFrequency      = (frequency . concat) (L.map snd cleanedTweets)
+  return (wordFrequency, languageFrequency, wordFreqByLang)
 
+test129 :: IO (Lang -> MyWord -> [Double])
 test129 = do
   (wordFrequency, languageFrequency, wordFrequencyByLanguage) <- test129'
   return $ probLanguageGivenWord languageFrequency wordFrequency wordFrequencyByLanguage
+
+-- 17297 tweets
+-- 239359 words
+-- 47558 = sum . (L.map (sum.elems) . elems) $ wFBL
+
+{-
+Sanity checks:
+(wF, lF, wFBL) <- test129'
+sum . elems $ lF
+sum . elems $ wF
+sum . (L.map (sum.elems) . elems) $ wFBL
+
+
+f <- test129
+f "en" "casa"
+f "es" "casa"
+f "pt" "casa"
+
+-}
