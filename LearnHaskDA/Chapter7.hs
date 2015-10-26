@@ -3,6 +3,7 @@
 module LearnHaskDA.Chapter7 where
 import LearnHaskDA.Chapter4 (queryDatabase)
 import Data.List as L
+import Data.Ord (comparing)
 import Data.Hashable
 import Data.HashMap.Strict as HM
 import Data.Convertible.Base
@@ -159,13 +160,13 @@ wordFrequencyByLanguage = fromListWith (HM.unionWith (+))
                         . L.map (\(k, vs)-> (k, frequency vs))
 
 probLanguageGivenWord ::
-  ( Eq k,  Hashable k,
-    Eq k1, Hashable k1,
-    Fractional f, Integral a
-  ) => HashMap k1 a
-    -> HashMap k a
-    -> HashMap k1 (HashMap k a)
-    -> k1 -> k -> [f]
+  ( Eq k, Hashable k,
+    Eq v, Hashable v,
+    Fractional f, Integral i
+  ) => HashMap v i
+    -> HashMap k i
+    -> HashMap v (HashMap k i)
+    -> v -> k -> [f]
 
 probLanguageGivenWord
     languageFrequency
@@ -177,8 +178,9 @@ probLanguageGivenWord
     [pLanguage * pWordGivenLanguage / pWord, pLanguage, pWordGivenLanguage, pWord]
   where
     countTweets   = fromIntegral . sum $ elems languageFrequency
-    countAllWords = fromIntegral . sum $ elems wordFrequency
     countLanguage = fromIntegral $ lookupDefault 0 language languageFrequency
+
+    countAllWords = fromIntegral . sum $ elems wordFrequency
     countWordsUsedInLanguage =  fromIntegral . sum . elems $
                                 wordFrequencyByLanguage ! language
     countWord     = fromIntegral $ lookupDefault 0 word wordFrequency
@@ -226,3 +228,79 @@ f "es" "casa"
 f "pt" "casa"
 
 -}
+
+-- probLanguage :: String -> HashMap String Integer -> Double
+probLanguage :: (Eq k, Hashable k, Fractional f, Integral i) =>
+  HashMap k i -> k -> f
+probLanguage languageFrequency language = countLanguage / countTweets
+  where
+    countTweets   = fromIntegral . sum $ elems languageFrequency
+    countLanguage = fromIntegral $ lookupDefault 0 language languageFrequency
+
+-- probWordGivenLanguage :: String -> String ->HashMap String (HashMap String Integer) -> Double
+probWordGivenLanguage ::
+  ( Eq k, Hashable k
+  , Eq v, Hashable v
+  , Fractional f, Integral i
+  ) => HashMap k (HashMap v i) -> k -> v -> f
+probWordGivenLanguage wordFrequencyByLanguage language word =
+    countWordInLanguage / countWordsUsedInLanguage
+  where
+    langFreq = wordFrequencyByLanguage ! language
+    countWordInLanguage      = fromIntegral $ lookupDefault 0 word $ langFreq
+    countWordsUsedInLanguage = fromIntegral . sum . elems          $ langFreq
+
+-- probLanguageGivenMessage ::
+--       String -> String
+--    -> HashMap String Integer
+--    -> HashMap String (HashMap String Integer)
+--    -> Double
+probLanguageGivenMessage ::
+  ( Eq k, Hashable k
+  , Fractional f
+  , Integral i) =>
+  HashMap k i -> HashMap k (HashMap MyWord i) -> MyWord -> k -> f
+probLanguageGivenMessage languageFrequency wordFrequencyByLanguage message language =
+    probLanguage languageFrequency language *
+    product (L.map (probWordGivenLanguage wordFrequencyByLanguage language) (words message))
+
+{-
+languageClassifierGivenMessage ::
+      Counts Lang
+   -> HashMap Lang (Counts MyWord)
+   -> String
+   -> [(Lang, Double)]
+-}
+languageClassifierGivenMessage ::
+  ( Eq k, Hashable k
+  , Fractional f
+  , Integral i) =>
+  HashMap k i -> HashMap k (HashMap MyWord i) -> MyWord -> [(k, f)]
+languageClassifierGivenMessage languageFrequency wordFrequencyByLanguage message =
+    L.map (\lang-> (lang, probLangGM lang)) (keys languageFrequency)
+  where probLangGM = probLanguageGivenMessage languageFrequency wordFrequencyByLanguage message
+
+-- maxClassifier :: [(String, Double)] -> (String, Double)
+maxClassifier :: Ord a => [(k, a)] -> (k, a)
+maxClassifier = L.maximumBy (comparing snd)
+
+test133 :: IO (MyWord -> (Lang, Double))
+test133 = do
+  (_wordFreq, languageFreq, wordFreqByLang) <- test129'
+  return (maxClassifier . languageClassifierGivenMessage languageFreq wordFreqByLang)
+
+phrases = [ "hi how are you doing today"
+          , "it is a beautiful day outside"
+          , "would you like to join me for lunch"
+          , "vaya ud derecho"
+          , "eres muy amable"
+          , "le gusta a usted aquí"
+          , "feliz cumpleaños"
+          , "cest une bonne idée"
+          , "il est très beau"
+          ]
+
+test134 :: IO [((Lang, Double), MyWord)]
+test134 = do
+  f <- test133
+  return $ L.map (\ph -> (f ph, ph)) phrases
