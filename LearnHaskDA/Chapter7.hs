@@ -152,11 +152,11 @@ wordFrequencyByLanguage' allLanguages cleanedTweets =
 -- Then all of those maps are combined.
 -}
 
-wordFrequencyByLanguage :: (Eq k, Hashable k,
+wordFrequencyByFst :: (Eq k, Hashable k,
                             Eq v, Hashable v,
                             Integral i) =>
                            [(k,[v])] -> HashMap k (HashMap v i)
-wordFrequencyByLanguage = fromListWith (HM.unionWith (+))
+wordFrequencyByFst = fromListWith (HM.unionWith (+))
                         . L.map (\(k, vs)-> (k, frequency vs))
 
 probLanguageGivenWord ::
@@ -201,7 +201,7 @@ test129' = do
   let uniqueTweets       = HM.keys freqTable
   let cleanedTweets      = zip (L.map snd uniqueTweets) (L.map (clean.fst) uniqueTweets)
   let languageFrequency  = (frequency . L.map fst) cleanedTweets
-  let wordFreqByLang     = wordFrequencyByLanguage cleanedTweets
+  let wordFreqByLang     = wordFrequencyByFst cleanedTweets
   let wordFrequency      = (frequency . concat) (L.map snd cleanedTweets)
   return (wordFrequency, languageFrequency, wordFreqByLang)
 

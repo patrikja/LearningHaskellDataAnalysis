@@ -75,3 +75,10 @@ average runsHomeAwayDiff
 https://apps.twitter.com/
 
 https://www.fpcomplete.com/school/starting-with-haskell/libraries-and-frameworks/text-manipulation/json
+
+## Chapter 8
+
+```shell
+sudo apt-get install liblapack-dev
+cabal install hmatrix
+```

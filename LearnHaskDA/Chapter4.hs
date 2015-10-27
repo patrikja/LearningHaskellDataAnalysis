@@ -22,6 +22,12 @@ readStringColumn = readTypeColumn
 readTypeColumn :: Convertible SqlValue b => [[SqlValue]] -> Int -> [b]
 readTypeColumn sqlResult index = map (fromSql . (!!index)) sqlResult
 
+-- readTwoColumns ::
+readTwoColumns :: (Convertible SqlValue t1, Convertible SqlValue t2) =>
+    Int -> Int -> [[SqlValue]] -> [(t1, t2)]
+readTwoColumns i1 i2 =
+    map (\x-> ( fromSql (x!!i1), fromSql (x!!i2) ) )
+
 queryDatabase :: FilePath -> String -> IO [[SqlValue]]
 queryDatabase databaseFile sqlQuery = do
   conn <- connectSqlite3 databaseFile
