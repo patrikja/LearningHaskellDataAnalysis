@@ -2,7 +2,7 @@
 -- documentation, see http://haskell.org/cabal/users-guide/
 
 name:                LearnHaskDA
-version:             0.7.1
+version:             0.7.3
 synopsis:            Some code related to the book "Learning Haskell Data Analysis"
 -- description:
 homepage:            https://github.com/patrikja/LearningHaskellDataAnalysis

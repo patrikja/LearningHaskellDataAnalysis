@@ -1,12 +1,10 @@
 module LearnHaskDA.Chapter8 where
---import Numeric.LinearAlgebra.Data
---import Numeric.LinearAlgebra.Algorithms
 import Numeric.LinearAlgebra
 import Data.List as L
 import Data.HashMap.Strict as HM
 import qualified LearnHaskDA.Chapter4 as Ch4
--- import LearnHaskDA.Chapter6
-import qualified LearnHaskDA.Chapter7 as Ch7 (clean, frequency, wordFrequencyByFst)
+import qualified LearnHaskDA.Chapter6 as Ch6
+import qualified LearnHaskDA.Chapter7 as Ch7 (Counts, MyWord, clean, frequency, wordFrequencyByFst)
 
 test140 = do
     tweetsEnglish <- Ch4.queryDatabase "tweets.sql" "SELECT user, message FROM tweets WHERE language='en'"
@@ -86,6 +84,37 @@ myTopWords = ["amp","day","new","like","love","good","great","video",
               "chance","photo","posted","birthday","lot","brain","know",
               "limitless","think"]
 
+topWords = bookTopWords
 
 -- page 143
--- wordFrequencyByUser = Ch7.wordFrequencyByFst . L.map
+type UserName = String
+type UserWordCount = [[Double]]
+test143 :: IO (HashMap UserName (Ch7.Counts Ch7.MyWord), UserWordCount)
+test143 = do
+    (cleanedTweets, wordFrequency) <- test140
+    let wordFrequencyByUser = Ch7.wordFrequencyByFst cleanedTweets
+    let getFrequencyOfWordByUser user word = fromIntegral $ (HM.lookupDefault 0 word (wordFrequencyByUser HM.! user)) :: Double
+    let allUsers = keys wordFrequencyByUser
+    let wordsMatrix = L.map (\user -> L.map (getFrequencyOfWordByUser user) topWords) allUsers
+    return (wordFrequencyByUser, wordsMatrix)
+
+----------------
+
+test150 = do
+    homeRecord <- Ch4.queryDatabase "winloss.sql" "SELECT homeTeam, SUM(homescore > awayscore), SUM(homescore), COUNT(*) FROM winloss GROUP BY homeTeam;"
+    awayRecord <- Ch4.queryDatabase "winloss.sql" "SELECT awayTeam, SUM(awayscore > homescore), SUM(awayscore), COUNT(*) FROM winloss GROUP BY awayTeam;"
+    let totalWins     = zipWith (+) (Ch4.readDoubleColumn homeRecord 1) (Ch4.readDoubleColumn awayRecord 1)
+    let totalRuns     = zipWith (+) (Ch4.readDoubleColumn homeRecord 2) (Ch4.readDoubleColumn awayRecord 2)
+    let totalGames    = zipWith (+) (Ch4.readDoubleColumn homeRecord 3) (Ch4.readDoubleColumn awayRecord 3)
+    let winPercentage = zipWith (/) totalWins totalGames
+    let runsPerGame   = zipWith (/) totalRuns totalGames
+    let baseball      = L.map (\(a,b) -> [a,b]) $ zip winPercentage runsPerGame
+    let p@(baseballMean, baseballCovMatrix) = meanCov $ fromLists baseball
+    return p
+
+{-
+test151 = do
+  (baseballMean, baseballCovMatrix) <- test150
+  let p@(baseballEvalues, baseballEvectors) = eigSH baseballCovMatrix
+  return p
+-}
