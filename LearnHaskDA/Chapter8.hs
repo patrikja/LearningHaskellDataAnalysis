@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleContexts #-}
 module LearnHaskDA.Chapter8 where
 import Numeric.LinearAlgebra
 import Data.List as L
@@ -112,9 +113,45 @@ test150 = do
     let p@(baseballMean, baseballCovMatrix) = meanCov $ fromLists baseball
     return p
 
-{-
+-- eigSH :: Field t => Herm t -> (Vector Double, Matrix t)
 test151 = do
   (baseballMean, baseballCovMatrix) <- test150
-  let p@(baseballEvalues, baseballEvectors) = eigSH baseballCovMatrix
+  let p@(baseballEvalues, baseballEvectors) = eigSH (sym baseballCovMatrix)
   return p
+
+-- page 154
+-- principalComponentAnalysis :: [[Double]] -> Integer -> Matrix Double
+principalComponentAnalysis records top = featureVectors <> topOrderedEvectors
+-- Some unnecessary tr in the book:
+--    tr $ mul (tr topOrderedEvectors) (tr featureVectors)
+  where  featureVectors  = fromLists records
+         (_, covMatrix)  = meanCov featureVectors
+         (_, evectors)   = eigSH (trustSym covMatrix)
+         topOrderedEvectors = takeColumns (fromInteger top) evectors
+
+{-
+-- Done: pull request for hmatrix changing the type of meanCov to use Herm
+https://github.com/albertoruiz/hmatrix/pull/157
+https://github.com/albertoruiz/hmatrix/blob/master/packages/base/src/Internal/Container.hs
+
+meanCovH :: Matrix Double -> (Vector Double, Herm Double)
+meanCovH x = (med, cov) where
+    r    = rows x
+    k    = 1 / fromIntegral r
+    med  = konst k r <> x
+    meds = konst 1 r `outer` med
+    xc   = x - meds
+    cov  = scale (recip (fromIntegral (r-1))) (mTm xc)
 -}
+
+-- let pcaMatrix = principalComponentAnalysis wordsMatrix 5
+
+-- euclideanDistanceSqrdFromRow :: Matrix Double -> Int -> Vector Double
+euclideanDistanceSqrdFromRow :: (Num t, Num (Vector t), Container Vector t) => Matrix t -> Int -> Vector t
+euclideanDistanceSqrdFromRow records row = sumOfSquaresVector
+  where
+    d = cols records
+    copyMatrix = repmat (subMatrix (row, 0) (1, d) records) (rows records) 1
+    diffMatrix = records - copyMatrix
+    diffSqrdMatrix = diffMatrix * diffMatrix
+    sumOfSquaresVector = sum $ toColumns diffSqrdMatrix
