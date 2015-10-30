@@ -6,7 +6,9 @@ import Data.HashMap.Strict as HM
 import qualified LearnHaskDA.Chapter4 as Ch4
 import qualified LearnHaskDA.Chapter6 as Ch6
 import qualified LearnHaskDA.Chapter7 as Ch7 (Counts, MyWord, clean, frequency, wordFrequencyByFst)
-import Test.QuickCheck
+
+import Test.QuickCheck -- This is not imported by the book (and that is a bad sign: the book talk almost nothing about code testing)
+import Data.Function (on)
 
 test140 = do
     tweetsEnglish <- Ch4.queryDatabase "tweets.sql" "SELECT user, message FROM tweets WHERE language='en'"
@@ -145,7 +147,7 @@ meanCovH x = (med, cov) where
     cov  = scale (recip (fromIntegral (r-1))) (mTm xc)
 -}
 
--- let pcaMatrix = principalComponentAnalysis wordsMatrix 5
+-- let pcaMatrix = principalComponentAnalysis wordMatrix 5
 
 -- euclideanDistanceSqrdFromRow :: Matrix Double -> Int -> Vector Double
 euclideanDistanceSqrdFromRow :: (Num t, Num (Vector t), Container Vector t) => Matrix t -> Int -> Vector t
@@ -176,8 +178,22 @@ findClosestFeaturesToRow records row knn = take knn orderOfFeatures
   where  orderOfFeatures = test156 sumOfSquares
          sumOfSquares    = LA.toList $ euclideanDistanceSqrdFromRow records row
 
-{-
+-- The users "most active" in the common words: [8225,15747,556, 1044, 1517, 2133]
+
 test157 = do
-  (_, wordMatrix) <- test143
-  return
+  (tab, wordMatrix) <- test143
+  let pcaMatrix = principalComponentAnalysis wordMatrix 5
+  return (tab, findClosestFeaturesToRow pcaMatrix 8225 6)
+
+----------------------------------------------------------------
+{-
+  Experiment to locate a few users with many words in the tweets database:
+  (tab, close) <- test157
+  let s = HM.map HM.size tab
+  sortBy (compare `on` snd) (HM.toList s)
+
+Top users (at one point):
+
+("WindowMouse",60),("kellyboy1977",62),("cassidyhanft",72),("love_the_rock2",80),("Gvccizay",81),("revraamess",97)]
+
 -}

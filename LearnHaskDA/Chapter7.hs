@@ -90,15 +90,19 @@ insertTweetsInDatabase tweets = do
                           [toSql message, toSql user, toSql language])
                        tweets
 
-collectTweetsIntoDatabase :: IO ()
-collectTweetsIntoDatabase = do
-    status <- twitterSearch "a"
+collectTweetsIntoDatabase :: String -> IO ()
+collectTweetsIntoDatabase str = do
+    status <- twitterSearch str
     either  putStrLn  (insertTweetsInDatabase . statuses)  status
-    threadDelay 5000
--- The delay is supposed to make sure we don't end up over the free
--- twitter api quota (but I think something wrong with the delay).
+    threadDelay 5000000
 
-slurpTweets = sequence_ (replicate 180 collectTweetsIntoDatabase)
+-- The delay of 5s = 5000000 microseconds is supposed to make sure we
+-- don't end up over the free twitter api quota. The book text said 5s
+-- but the implementation used only 5000 microseconds so that delay
+-- was far too small.
+
+
+slurpTweets = sequence_ (replicate 180 (collectTweetsIntoDatabase "the")) -- was "a" for the multi-language collection
 
 fromSqlPair ::  (Convertible SqlValue a, Convertible SqlValue b) =>
                 [SqlValue] -> (a, b)
