@@ -1,11 +1,12 @@
 {-# LANGUAGE FlexibleContexts #-}
 module LearnHaskDA.Chapter8 where
-import Numeric.LinearAlgebra
+import Numeric.LinearAlgebra as LA
 import Data.List as L
 import Data.HashMap.Strict as HM
 import qualified LearnHaskDA.Chapter4 as Ch4
 import qualified LearnHaskDA.Chapter6 as Ch6
 import qualified LearnHaskDA.Chapter7 as Ch7 (Counts, MyWord, clean, frequency, wordFrequencyByFst)
+import Test.QuickCheck
 
 test140 = do
     tweetsEnglish <- Ch4.queryDatabase "tweets.sql" "SELECT user, message FROM tweets WHERE language='en'"
@@ -96,8 +97,8 @@ test143 = do
     let wordFrequencyByUser = Ch7.wordFrequencyByFst cleanedTweets
     let getFrequencyOfWordByUser user word = fromIntegral $ (HM.lookupDefault 0 word (wordFrequencyByUser HM.! user)) :: Double
     let allUsers = keys wordFrequencyByUser
-    let wordsMatrix = L.map (\user -> L.map (getFrequencyOfWordByUser user) topWords) allUsers
-    return (wordFrequencyByUser, wordsMatrix)
+    let wordMatrix = L.map (\user -> L.map (getFrequencyOfWordByUser user) topWords) allUsers
+    return (wordFrequencyByUser, wordMatrix)
 
 ----------------
 
@@ -151,7 +152,32 @@ euclideanDistanceSqrdFromRow :: (Num t, Num (Vector t), Container Vector t) => M
 euclideanDistanceSqrdFromRow records row = sumOfSquaresVector
   where
     d = cols records
-    copyMatrix = repmat (subMatrix (row, 0) (1, d) records) (rows records) 1
-    diffMatrix = records - copyMatrix
-    diffSqrdMatrix = diffMatrix * diffMatrix
+    n = rows records
+    theRow = subMatrix (row, 0) (1, d) records
+    copyMatrix = repmat theRow n 1
+    diffMatrix      = records    - copyMatrix  -- Pointwise operation
+    diffSqrdMatrix  = diffMatrix * diffMatrix  -- Pointwise operation
     sumOfSquaresVector = sum $ toColumns diffSqrdMatrix
+
+orderBookSimplified :: Eq a => [a] -> [a] -> [Int]
+orderBookSimplified unsorted = concatMap (`L.elemIndices` unsorted)
+
+test156' :: Ord a => [a] -> [Int]
+test156' xs = orderBookSimplified xs (nub $ sort xs)
+
+-- Much faster (better complexity):
+test156 :: Ord a => [a] -> [Int]
+test156 = L.map snd . sort . (`zip` [0..])
+
+qc156 xs = test156 xs == test156' xs
+
+findClosestFeaturesToRow :: Matrix Double -> Int -> Int -> [Int]
+findClosestFeaturesToRow records row knn = take knn orderOfFeatures
+  where  orderOfFeatures = test156 sumOfSquares
+         sumOfSquares    = LA.toList $ euclideanDistanceSqrdFromRow records row
+
+{-
+test157 = do
+  (_, wordMatrix) <- test143
+  return
+-}
