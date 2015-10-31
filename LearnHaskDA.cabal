@@ -2,7 +2,7 @@
 -- documentation, see http://haskell.org/cabal/users-guide/
 
 name:                LearnHaskDA
-version:             0.8
+version:             0.8.2
 synopsis:            Some code related to the book "Learning Haskell Data Analysis"
 -- description:
 homepage:            https://github.com/patrikja/LearningHaskellDataAnalysis
@@ -17,7 +17,7 @@ build-type:          Simple
 cabal-version:       >=1.10
 
 library
-  exposed-modules:     LearnHaskDA.Chapter1, LearnHaskDA.Median, LearnHaskDA.Chapter2, LearnHaskDA.Chapter3, LearnHaskDA.Chapter3.Search, LearnHaskDA.Chapter4, LearnHaskDA.Chapter5, LearnHaskDA.Chapter6, LearnHaskDA.Chapter7, LearnHaskDA.Chapter8
+  exposed-modules:     LearnHaskDA.Chapter1, LearnHaskDA.Median, LearnHaskDA.Chapter2, LearnHaskDA.Chapter3, LearnHaskDA.Chapter3.Search, LearnHaskDA.Chapter4, LearnHaskDA.Chapter5, LearnHaskDA.Chapter6, LearnHaskDA.Chapter7, LearnHaskDA.Chapter8, LearnHaskDA.Appendix
   -- other-modules:
   -- other-extensions:
   build-depends:       HDBC

@@ -82,3 +82,7 @@ https://www.fpcomplete.com/school/starting-with-haskell/libraries-and-frameworks
 sudo apt-get install liblapack-dev
 cabal install hmatrix
 ```
+
+## Appendix
+
+Just some simple examples of using regular expressions for text matching.
